@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "bluebird": "*",
+    "request-promise": "*",
+    "debug": "*",
+    "csv": "*"
+  }
+}
