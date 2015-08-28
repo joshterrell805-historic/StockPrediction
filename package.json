@@ -3,6 +3,7 @@
     "bluebird": "*",
     "request-promise": "*",
     "debug": "*",
-    "csv": "*"
+    "csv": "*",
+    "lodash": "*"
   }
 }
