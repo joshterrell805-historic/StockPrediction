@@ -9,7 +9,8 @@ require.config({
   }
 });
 
-require(['d3', 'c3', 'lodash', 'json!CJES.json'], function(d3, c3, _, rawData) {
+require(['d3', 'c3', 'lodash', 'json!data/CJES.json'],
+    function(d3, c3, _, rawData) {
   rawData.timestamp = _.map(rawData.timestamp, function(ts) {return ts*1000;});
   var index = 0;
   var count = 30;
