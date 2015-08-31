@@ -5,7 +5,7 @@
 #   sellValue: the day's price to sell at. Either ('price', 'high', or *'low'*)
 
 findBuyIndexes = function(quotes, maxHoldDays=30, minSellToBuyRatio=2.0,
-    buyValue='high', sellValue='low') {
+    buyValue='high', sellValue='low', minConsecutiveSellDays=5) {
 
   m = nrow(quotes);
   buyValues  = quotes[,buyValue];
@@ -14,10 +14,12 @@ findBuyIndexes = function(quotes, maxHoldDays=30, minSellToBuyRatio=2.0,
   buyIndexes = c();
 
   sapply(1:m, function(i) {
+    sellDays = 0;
     sapply(i:(i+maxHoldDays), function(j) {
       if (j < m) {
         if (buyValues[i] * minSellToBuyRatio <= sellValues[j]) {
-          if (!(i  %in% buyIndexes)) {
+          sellDays <<- sellDays + 1;
+          if (sellDays >= minConsecutiveSellDays && !(i  %in% buyIndexes)) {
             buyIndexes <<- append(buyIndexes, i);
           }
         }
