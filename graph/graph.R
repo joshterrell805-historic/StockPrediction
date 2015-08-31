@@ -1,12 +1,14 @@
 library('ggplot2');
 source('lib/findBuyIndexes.R');
 source('lib/sma.R');
+source('lib/growth.R');
 
-quotes          = read.csv('data/CJES.csv');
+quotes          = read.csv('data/BBEP.csv');
 quotes          = na.omit(quotes);
 
 quotes$date     = as.Date(as.POSIXct(quotes$timestamp, origin="1970-01-01"))
 quotes$price    = rowMeans(subset(quotes, select=c(high, low)));
+
 quotes$sma_015  = sma(quotes, 'price', 15);
 quotes$sma_030  = sma(quotes, 'price', 30);
 quotes$sma_060  = sma(quotes, 'price', 60);
@@ -15,31 +17,10 @@ quotes$vma_060  = sma(quotes, 'volume', 60);
 quotes          = na.omit(quotes);
 # print(nrow(quotes));
 
-growth_field = 'sma_015';
-quotes$price_growth = sapply(1:nrow(quotes), function(i) {
-  if (i == 1) {
-    return(NA);
-  } else {
-    q = quotes[i,];
-    this = q[,growth_field];
-    last = tail(quotes[quotes$timestamp < q$timestamp, growth_field], 1);
-    (this - last) / last * 100;
-  }
-});
+quotes$price_growth_15_1 = growth(quotes, 'sma_015', 1);
+quotes$volume_growth_60_1 = growth(quotes, 'vma_060', 1);
 
-growth_field = 'vma_060';
-quotes$volume_growth = sapply(1:nrow(quotes), function(i) {
-  if (i == 1) {
-    return(NA);
-  } else {
-    q = quotes[i,];
-    this = q[,growth_field];
-    last = tail(quotes[quotes$timestamp < q$timestamp, growth_field], 1);
-    (this - last) / last * 100;
-  }
-});
-
-quotes = quotes[2:nrow(quotes), ];
+quotes = quotes[16:nrow(quotes), ];
 # print(nrow(quotes)); quotes = na.omit(quotes); print(nrow(quotes));
 
 rownames(quotes) = 1:nrow(quotes);
@@ -49,19 +30,20 @@ buyIndexes       = findBuyIndexes(quotes, maxHoldDays=30,
 buyIndexes       = buyIndexes[buyIndexes>60];
 buyIndexes       = buyIndexes[buyIndexes<(nrow(quotes)-30)];
 print(buyIndexes);
-buyIndex = buyIndexes[1];
+buyIndex = buyIndexes[7];
 buyDate = quotes[buyIndex,]$date;
 
 quotes = quotes[(buyIndex-60-1):(buyIndex+30-1),];
 buyIndex = NA;
 
-growthSpan = max(quotes$price_growth) - min(quotes$price_growth);
+growthSpan = max(quotes$price_growth_15_1) - min(quotes$price_growth_15_1);
 ylimits = c(floor(min(quotes$price) - growthSpan), ceiling(max(quotes$price)));
-quotes$price_growth = quotes$price_growth + ylimits[1] + growthSpan/2;
-quotes$volume_growth = quotes$volume_growth + ylimits[1] + growthSpan/2;
+quotes$price_growth_15_1 = quotes$price_growth_15_1 + ylimits[1] + growthSpan/2;
+# print(nrow(quotes)); quotes = na.omit(quotes); print(nrow(quotes));
+quotes$volume_growth_60_1 = quotes$volume_growth_60_1 + ylimits[1] + growthSpan/2;
 
-fn_vol <- smooth.spline(x=quotes$timestamp, y=quotes$volume_growth);
-quotes$volume_growth_smooth = data.frame(predict(fn_vol, quotes$timestamp))$y;
+fn_vol <- smooth.spline(x=quotes$timestamp, y=quotes$volume_growth_60_1);
+quotes$volume_growth_smooth_60_1 = data.frame(predict(fn_vol, quotes$timestamp))$y;
 
 buyQuote = quotes[quotes$date == buyDate,];
 quotesAfter = head(quotes[quotes$date > buyDate,], 30);
@@ -82,12 +64,13 @@ graph <- ggplot() +
     geom_smooth(data=quotes, aes(x=date, y=sma_060), colour='#FF1111',
         stat='identity') +
 
-    geom_smooth(data=quotes, aes(x=date, y=price_growth),
+    geom_smooth(data=quotes, aes(x=date, y=price_growth_15_1),
         colour='#111199', stat='identity') +
-    geom_smooth(data=quotes, aes(x=date, y=volume_growth_smooth),
+    geom_smooth(data=quotes, aes(x=date, y=volume_growth_smooth_60_1),
         colour='#991199', stat='identity') +
 #    geom_smooth(data=quotes, aes(x=date, y=volume_growth),
 #        colour='#77BB77', stat='identity') +
+
     geom_hline(yintercept = ylimits[1] + growthSpan/2) +
     scale_y_continuous(limit=ylimits, breaks=ylimits[1]:ylimits[2]) +
     scale_x_date(breaks=quotes[c(1,(1:15)*6+1), 'date']) +
