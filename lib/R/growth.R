@@ -4,10 +4,14 @@ growth = function(quotes, growth_field, period) {
       NA;
     } else {
       q = quotes[i,];
-      this = q[, growth_field];
       last =
           tail(quotes[quotes$timestamp < q$timestamp, growth_field], period)[1];
-      (this - last) / last * 100;
+      if (is.na(last) || last == 0) {
+        NA;
+      } else {
+        this = q[, growth_field];
+        (this - last) / last * 100;
+      }
     }
   });
 };
