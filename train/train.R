@@ -1,5 +1,6 @@
 source('lib/sma.R'); 
 source('lib/findBuyIndexes.R'); 
+source('lib/growth.R'); 
 library(neuralnet);
 
 quotes         = read.csv('data/CJES.csv');
@@ -14,96 +15,40 @@ quotes$date       = as.Date(as.POSIXct(quotes$timestamp, origin="1970-01-01"));
 # vma and sma
 # and vma[p1] - vma[p2]
 #periods = c(5, 15, 45, 90, 180);
-periods = c(5, 15, 45, 90);
-column_names = c();
-seconds_per_day = 24*60*60;
+periods = c(15, 60);
+vars = c();
 
 for (period in periods) {
-  column_names <<- append(column_names, c(
-      paste('sma', period, sep='_'),
-      paste('vma', period, sep='_')
-  ));
   quotes[,paste('sma', period, sep='_')] = sma(quotes, 'price', period);
   quotes[,paste('vma', period, sep='_')] = sma(quotes, 'volume', period);
-
-  days = 1;
-  movements = data.frame(v=c(''), a=c('v_'), j=c('a_'));
-  lapply(colnames(movements), function(movement) {
-    lapply(c('sma', 'vma'), function(obs) {
-      sapply(2:nrow(quotes), function(i) {
-        fromMovement = paste(movements[,movement], obs, sep='');
-        quotes[i,paste(movement, obs, period, sep='_')] <<- (
-            quotes[i, paste(fromMovement, period, sep='_')] -
-            quotes[i-1,paste(fromMovement, period, sep='_')]) / days;
-      });
-      column_names <<- append(column_names, c(
-          paste(movement, obs, period, sep='_'))
-      );
-    });
-  });
 }
 
-print(column_names);
+for (p in c(15, 30, 45)) {
+  for (m in c('sma', 'vma')) {
+    name = paste(m, 'growth', '15', p, sep='_');
+    vars = append(vars, name);
+    quotes[,name] =
+        growth(quotes, paste(m, '15', sep='_'), p);
+  }
+}
 
-#for (i in 1:length(periods)) {
-#  if (i == length(periods)) {
-#    break;
-#  }
-#  for (j in (i+1):length(periods)) {
-#    column_names <<- append(column_names, c(
-#        paste('sma',   periods[i], periods[j], sep='_'),
-#        paste('vma',   periods[i], periods[j], sep='_'),
-#        paste('v_sma', periods[i], periods[j], sep='_'),
-#        paste('a_sma', periods[i], periods[j], sep='_'),
-#        paste('j_sma', periods[i], periods[j], sep='_'),
-#        paste('v_vma', periods[i], periods[j], sep='_'),
-#        paste('a_vma', periods[i], periods[j], sep='_'),
-#        paste('j_vma', periods[i], periods[j], sep='_')
-#    ));
-#    quotes[,paste('sma', periods[i], periods[j], sep='_')] =
-#        quotes[,paste('sma', periods[i], sep='_')] -
-#        quotes[,paste('sma', periods[j], sep='_')];
-#    quotes[,paste('vma', periods[i], periods[j], sep='_')] =
-#        quotes[,paste('vma', periods[i], sep='_')] -
-#        quotes[,paste('vma', periods[j], sep='_')];
-#
-#    quotes[,paste('v_sma', periods[i], periods[j], sep='_')] =
-#        quotes[,paste('v_sma', periods[i], sep='_')] -
-#        quotes[,paste('v_sma', periods[j], sep='_')];
-#    quotes[,paste('a_sma', periods[i], periods[j], sep='_')] =
-#        quotes[,paste('a_sma', periods[i], sep='_')] -
-#        quotes[,paste('a_sma', periods[j], sep='_')];
-#    quotes[,paste('j_sma', periods[i], periods[j], sep='_')] =
-#        quotes[,paste('j_sma', periods[i], sep='_')] -
-#        quotes[,paste('j_sma', periods[j], sep='_')];
-#
-#    quotes[,paste('v_vma', periods[i], periods[j], sep='_')] =
-#        quotes[,paste('v_vma', periods[i], sep='_')] -
-#        quotes[,paste('v_vma', periods[j], sep='_')];
-#    quotes[,paste('a_vma', periods[i], periods[j], sep='_')] =
-#        quotes[,paste('a_vma', periods[i], sep='_')] -
-#        quotes[,paste('a_vma', periods[j], sep='_')];
-#    quotes[,paste('j_vma', periods[i], periods[j], sep='_')] =
-#        quotes[,paste('j_vma', periods[i], sep='_')] -
-#        quotes[,paste('j_vma', periods[j], sep='_')];
-#  }
-#}
+print(vars);
+
 quotes = na.omit(quotes);
 print(nrow(quotes));
 
-f = as.formula(paste('should_buy ~ ', paste(column_names, collapse='+'))); 
-layers = c(length(column_names), length(column_names), length(column_names),
-    length(column_names), length(column_names), length(column_names));
-net = neuralnet(f, hidden=layers, quotes);
-#print(net);
+f = as.formula(paste('should_buy ~ ', paste(vars, collapse='+'))); 
+layers = c(length(vars), length(vars), length(vars), length(vars), length(vars),
+    length(vars));
+net = neuralnet(f, hidden=layers, threshold=0.001, quotes);
 # plot(net);
-test = quotes[,column_names];
+test = quotes[,vars];
 results = compute(net, test);
 
 cleanoutput = cbind(quotes$date, quotes$should_buy,
     as.data.frame(results$net.result));
 colnames(cleanoutput) = c('date', 'should_buy', 'predicted');
-# print(cleanoutput);
+print(cleanoutput);
 print(net);
 
 # print(quotes[1:10,]);
