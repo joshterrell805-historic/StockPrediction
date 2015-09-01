@@ -30,7 +30,7 @@ buyIndexes       = findBuyIndexes(quotes, maxHoldDays=30,
 buyIndexes       = buyIndexes[buyIndexes>60];
 buyIndexes       = buyIndexes[buyIndexes<(nrow(quotes)-30)];
 print(buyIndexes);
-buyIndex = buyIndexes[7];
+buyIndex = buyIndexes[2];
 buyDate = quotes[buyIndex,]$date;
 
 quotes = quotes[(buyIndex-60-1):(buyIndex+30-1),];
