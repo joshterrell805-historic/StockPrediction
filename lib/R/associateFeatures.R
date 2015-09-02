@@ -3,11 +3,11 @@ source('lib/findBuyIndexes.R');
 source('lib/growth.R'); 
 
 associateFeatures = function (quotes) {
-  periods        = c(5, 15, 30, 60, 120);
+  periods        = c(2, 4, 8, 16, 32);
   quotes         = na.omit(quotes);
 
-  buyIndexes     = findBuyIndexes(quotes, maxHoldDays=30,
-      minSellToBuyRatio=1.2);
+  buyIndexes     = findBuyIndexes(quotes, maxHoldDays=7,
+      minSellToBuyRatio=1.08);
   buyTimestamps  = quotes[buyIndexes, 'timestamp'];
 
   quotes$should_buy = as.integer(quotes$timestamp %in% buyTimestamps);
@@ -24,32 +24,29 @@ associateFeatures = function (quotes) {
   quotes$mday = quotes$date$mday;
   quotes$yday = quotes$date$yday;
 
-  # growth of (s|v)ma 30 from 30... 30, 60, and 90 ago
-  for (p in c(30, 60, 90)) {
+  # growth of 2 from c(...) days ago
+  for (p in c(2, 4, 6, 8, 10, 12, 14)) {
     for (m in c('sma', 'vma')) {
-      name = paste(m, 'growth', '30', p, sep='_');
-      quotes[,name] = growth(quotes, paste(m, 30, sep='_'), p);
+      name = paste(m, 'growth', '2', p, sep='_');
+      quotes[,name] = growth(quotes, paste(m, '2', sep='_'), p);
     }
   }
-  # growth of 60.. 60 ago
-  for (p in c(60)) {
+  for (p in c(4, 8, 16)) {
     for (m in c('sma', 'vma')) {
-      name = paste(m, 'growth', '60', p, sep='_');
-      quotes[,name] = growth(quotes, paste(m, 60, sep='_'), p);
+      name = paste(m, 'growth', '4', p, sep='_');
+      quotes[,name] = growth(quotes, paste(m, '4', sep='_'), p);
     }
   }
-  # growth of 15...
-  for (p in c(15, 30, 45)) {
+  for (p in c(8, 16, 24)) {
     for (m in c('sma', 'vma')) {
-      name = paste(m, 'growth', '15', p, sep='_');
-      quotes[,name] = growth(quotes, paste(m, 15, sep='_'), p);
+      name = paste(m, 'growth', '8', p, sep='_');
+      quotes[,name] = growth(quotes, paste(m, '8', sep='_'), p);
     }
   }
-  # growth of 5...
-  for (p in c(5, 10, 15)) {
+  for (p in c(16)) {
     for (m in c('sma', 'vma')) {
-      name = paste(m, 'growth', '5', p, sep='_');
-      quotes[,name] = growth(quotes, paste(m, 5, sep='_'), p);
+      name = paste(m, 'growth', '16', p, sep='_');
+      quotes[,name] = growth(quotes, paste(m, '16', sep='_'), p);
     }
   }
 
