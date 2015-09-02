@@ -1,19 +1,18 @@
 source('lib/loadPreppedData.R');
 library(neuralnet);
 
-quotes_all = read.csv('data/AKS.prepped.csv');
-quotes_all = quotes_all[1:3000,];
+quotes_all = loadPreppedData();
 print('data loaded');
-
 
 quotes_pos = quotes_all[quotes_all$should_buy == T,];
 quotes_pos = quotes_pos[sample(nrow(quotes_pos)),];
 
 quotes_neg = quotes_all[quotes_all$should_buy == F,];
 quotes_neg = quotes_neg[sample(nrow(quotes_neg)),];
+quotes_neg = quotes_neg[1:(nrow(quotes_pos)*10),];
 
 
-percentTrain = 0.40;
+percentTrain = 0.10;
 trainPosEnd = floor(nrow(quotes_pos) * percentTrain);
 trainNegEnd = floor(nrow(quotes_neg) * percentTrain);
 
@@ -28,8 +27,8 @@ print(vars);
 
 f = as.formula(paste('should_buy ~ ', paste(vars, collapse='+'))); 
 # layers
-layers = c(length(vars), length(vars), length(vars), length(vars));#,
-#    length(vars), length(vars), length(vars), length(vars), length(vars));
+layers = c(length(vars), length(vars), length(vars), length(vars),
+    length(vars), length(vars));#, length(vars), length(vars), length(vars));
 
 train_pos = nrow(quotes_train[quotes_train$should_buy == 1,]);
 print(paste('begin training; examples:', trainPosEnd+trainNegEnd, 'positives:',
