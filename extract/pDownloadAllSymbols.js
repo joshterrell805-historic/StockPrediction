@@ -7,9 +7,9 @@ var pDownloadTickerSymbolData = require('./pDownloadTickerSymbolData'),
     pReadFile = Promise.promisify(fs.readFile),
     pWriteFile = Promise.promisify(fs.writeFile);
 
-pReadFile('data/symbols.csv')
+pReadFile('data/big_symbols.csv')
 .then(function(symbols) {
-  return symbols.toString().trim().split(',');
+  return symbols.toString().trim().split('\n').slice(1);
 })
 .then(function(symbols) {
   return Promise.all(
