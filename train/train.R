@@ -1,49 +1,54 @@
-source('lib/loadPreppedData.R');
 library(neuralnet);
 
-quotes_all = loadPreppedData();
+quotes_all = read.csv('data/AAPL.labeled.csv');
+quotes_all = quotes_all[sample(nrow(quotes_all)),];
 print('data loaded');
 
-quotes_pos = quotes_all[quotes_all$should_buy == T,];
-quotes_pos = quotes_pos[sample(nrow(quotes_pos)),];
+pos = 1000;
+neg = 4000;
 
-quotes_neg = quotes_all[quotes_all$should_buy == F,];
-quotes_neg = quotes_neg[sample(nrow(quotes_neg)),];
-quotes_neg = quotes_neg[1:(nrow(quotes_pos)*10),];
+quotes_pos    = quotes_all[quotes_all$test == T,];
+quotes_te_pos = quotes_pos[1:pos,];
+quotes_tr_pos = quotes_pos[(pos+1):(pos*2),];
 
+quotes_neg    = quotes_all[quotes_all$test == F,];
+quotes_te_neg = quotes_neg[1:neg,];
+quotes_tr_neg = quotes_neg[(neg+1):nrow(quotes_neg),];
+quotes_tr_neg = head(quotes_tr_neg[quotes_tr_neg$train == F,], n=neg);
 
-percentTrain = 0.10;
-trainPosEnd = floor(nrow(quotes_pos) * percentTrain);
-trainNegEnd = floor(nrow(quotes_neg) * percentTrain);
+quotes_tr = rbind(quotes_tr_pos, quotes_tr_neg);
+quotes_te = rbind(quotes_te_pos, quotes_te_neg);
 
-quotes_train = quotes_neg[1:trainNegEnd,];
-quotes_train = rbind(quotes_train, quotes_pos[1:trainPosEnd,]);
-
-quotes_test = quotes_neg[(trainNegEnd+1):nrow(quotes_neg),];
-quotes_test = rbind(quotes_test, quotes_pos[(trainPosEnd+1):nrow(quotes_pos),]);
-
-vars = colnames(quotes_all)[21:length(quotes_all)];
+vars = colnames(quotes_all);
+vars = vars[substr(vars,1,4) == 'feat'];
 print(vars);
 
-f = as.formula(paste('should_buy ~ ', paste(vars, collapse='+'))); 
 # layers
-layers = c(length(vars), length(vars), length(vars), length(vars),
-    length(vars), length(vars));#, length(vars), length(vars), length(vars));
+layers = #c(length(vars)*14, length(vars)*13, length(vars)*12, length(vars)*11,
+    c(length(vars)*10, length(vars)*9, length(vars)*8, length(vars)*7,
+    length(vars)*6, length(vars)*5, length(vars)*4, length(vars)*3,
+    length(vars)*2, length(vars));
+# layers = c(length(vars), length(vars), length(vars), length(vars),
+#     floor(length(vars)/2), floor(length(vars)/2), floor(length(vars)/2));
 
-train_pos = nrow(quotes_train[quotes_train$should_buy == 1,]);
-print(paste('begin training; examples:', trainPosEnd+trainNegEnd, 'positives:',
-    trainPosEnd));
-net = neuralnet(f, quotes_train, hidden=layers, threshold=0.01);
+# layers = c(length(vars), length(vars));#, length(vars), length(vars),
+#    length(vars), length(vars));#, length(vars), length(vars), length(vars));
 
-res = compute(net, quotes_test[,vars]);
-res = cbind(quotes_test$date, quotes_test$should_buy,
+print(paste('begin training; examples:', nrow(quotes_tr), 'positives:',
+    nrow(quotes_tr_pos)));
+
+f = as.formula(paste('test ~ ', paste(vars, collapse='+'))); 
+net = neuralnet(f, quotes_tr, hidden=layers, threshold=0.1);
+
+res = compute(net, quotes_te[,vars]);
+res = cbind(quotes_te$date, quotes_te$test,
     as.data.frame(res$net.result));
-colnames(res) = c('date', 'should_buy', 'predicted');
+colnames(res) = c('date', 'test', 'predicted');
 
 # calculate test error
 threshold = 0.5;
-p = res[res$should_buy == T,];
-n = res[res$should_buy == F,];
+p = res[res$test == T,];
+n = res[res$test == F,];
 tp = nrow(p[p$predicted > threshold,]);
 fp = nrow(n[n$predicted > threshold,]);
 fn = nrow(p[p$predicted < threshold,]);
