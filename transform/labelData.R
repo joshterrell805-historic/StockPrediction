@@ -1,4 +1,5 @@
 source('lib/ema.R');
+
 # associate the points at the start and end of each hour
 associateHourBoundaries = function(quotes) {
   minTimestamp = min(quotes$timestamp);
@@ -75,6 +76,10 @@ associateperiods = function(quotes, periods=c(12,36,120,360)) {
 
 # associate features on the data
 associateFeatures = function(quotes, periods=c(12,36,120,360)) {
+  quotes$date      = as.POSIXlt(quotes$timestamp, origin="1970-01-01");
+  quotes$feat_hour = quotes$date$hour;
+  quotes$feat_wday = quotes$date$wday;
+
   # position relative to mean: (ema120 - ema360) / ema360 ...
   sapply(1:(length(periods)-1), function(i) {
     periodSmall = periods[i];
