@@ -1,11 +1,11 @@
 library(neuralnet);
 
-quotes_all = read.csv('data/AAPL.labeled.csv');
+quotes_all = read.csv('data/AAPL.labeled.2.csv');
 quotes_all = quotes_all[sample(nrow(quotes_all)),];
 print('data loaded');
 
-pos = 1000;
-neg = 4000;
+pos = 2000;
+neg = 3000;
 
 quotes_pos    = quotes_all[quotes_all$test == T,];
 quotes_te_pos = quotes_pos[1:pos,];
@@ -24,18 +24,24 @@ vars = vars[substr(vars,1,4) == 'feat'];
 print(vars);
 
 # layers
-layers = #c(length(vars)*14, length(vars)*13, length(vars)*12, length(vars)*11,
-    c(length(vars)*10, length(vars)*9, length(vars)*8, length(vars)*7,
-    length(vars)*6, length(vars)*5, length(vars)*4, length(vars)*3,
-    length(vars)*2, length(vars));
+lv = length(vars);
+layers =
+  c(5*lv, 4*lv, 3*lv, 2*lv, lv);
+#  c(8*lv, 7*lv, 6*lv, 5*lv);
+#c(length(vars)*14, length(vars)*13, length(vars)*12, length(vars)*11,
+#    c(length(vars)*10, length(vars)*9, length(vars)*8, length(vars)*7,
+#    length(vars)*6, length(vars)*5, length(vars)*4, length(vars)*3,
+#    length(vars)*2, length(vars));
 # layers = c(length(vars), length(vars), length(vars), length(vars),
 #     floor(length(vars)/2), floor(length(vars)/2), floor(length(vars)/2));
 
 # layers = c(length(vars), length(vars));#, length(vars), length(vars),
 #    length(vars), length(vars));#, length(vars), length(vars), length(vars));
 
-print(paste('begin training; examples:', nrow(quotes_tr), 'positives:',
-    nrow(quotes_tr_pos)));
+print(paste('begin training; train: ',
+    nrow(quotes_tr_pos), '/', nrow(quotes_tr), ' test: ',
+    nrow(quotes_te_pos), '/', nrow(quotes_te),
+    sep=''));
 
 f = as.formula(paste('test ~ ', paste(vars, collapse='+'))); 
 net = neuralnet(f, quotes_tr, hidden=layers, threshold=0.1);

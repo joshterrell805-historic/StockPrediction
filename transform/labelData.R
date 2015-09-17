@@ -53,7 +53,7 @@ associateHourPrice = function(quotes) {
 
 # associate the max growth percent between two one-hour-segments in
 # `maxHoldHours` hours.
-associateMaxGrowth = function(quotes, maxHoldHours=24) {
+associateMaxGrowth = function(quotes, maxHoldHours=8) {
   hourStarts = quotes[quotes$hourStart == T,];
 
   sapply(1:(nrow(hourStarts)-23), function(i) {
@@ -67,7 +67,7 @@ associateMaxGrowth = function(quotes, maxHoldHours=24) {
   quotes;
 };
 
-associateperiods = function(quotes, periods=c(12,36,120,360)) {
+associateEmas = function(quotes, periods=c(4,12,36,120,360)) {
   lapply(periods, function(period) {
     quotes[,paste('ema', period, sep='')] <<- ema(quotes, 'price', period);
   });
@@ -75,7 +75,7 @@ associateperiods = function(quotes, periods=c(12,36,120,360)) {
 };
 
 # associate features on the data
-associateFeatures = function(quotes, periods=c(12,36,120,360)) {
+associateFeatures = function(quotes, periods=c(4,12,36,120,360)) {
   quotes$date      = as.POSIXlt(quotes$timestamp, origin="1970-01-01");
   quotes$feat_hour = quotes$date$hour;
   quotes$feat_wday = quotes$date$wday;
@@ -140,7 +140,7 @@ associateFeatures = function(quotes, periods=c(12,36,120,360)) {
 };
 
 # should the stock be bought (testing)?
-associateTest = function(quotes, minGrowth=0.01) {
+associateTest = function(quotes, minGrowth=0.010) {
   quotes$test = quotes$maxGrowth >= minGrowth;
   quotes;
 };
@@ -148,7 +148,7 @@ associateTest = function(quotes, minGrowth=0.01) {
 # should the stock be bought (training)?
 # T, F, or NULL
 # null means don't train with the datapoint.
-associateTrain = function(quotes, minGrowth=0.01, limitRejectGrowth=0.003) {
+associateTrain = function(quotes, minGrowth=0.014, limitRejectGrowth=0.003) {
   quotes$train = NA;
   sapply(1:nrow(quotes), function(i) {
     this = quotes[i,];
@@ -173,7 +173,7 @@ labelData = function(name) {
   quotes = na.omit(quotes);
   quotes = associateTest(quotes);
   quotes = associateTrain(quotes);
-  write.csv(quotes, paste('data/', name, '.labeled.csv', sep=''));
+  write.csv(quotes, paste('data/', name, '.labeled.3.csv', sep=''));
 };
 
 labelData('AAPL');
