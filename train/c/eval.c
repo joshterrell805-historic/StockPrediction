@@ -3,41 +3,36 @@
 
 int main()
 {
-  fann_type *calc_out;
-  fann_type input[2];
+  struct fann *ann = fann_create_from_file("data/AAPL.net");
+  struct fann_train_data *testData =
+      fann_read_train_from_file("data/AAPL.test.fann");
 
-  struct fann *ann = fann_create_from_file("xor_float.net");
 
-  input[0] = -1;
-  input[1] = 1;
-  calc_out = fann_run(ann, input);
+  int tp = 0, tn = 0, fp = 0, fn = 0;
+  int a, p;
+  fann_type *input, *actual, *predicted;
+  for (int i = 0; i < testData->num_data; ++i) {
+    input = testData->input[i];
+    actual = testData->output[i];
+    predicted = fann_run(ann, input);
+    a = actual[0] >= 0;
+    p = predicted[0] >= 0;
+    if (i == 0) {
+      printf("actual: %d  predicted: %d\n", a, p);
+    }
 
-  printf("xor test (%f,%f) -> %f\n", input[0], input[1], calc_out[0]);
+    if (a) {
+      if (p) ++tp;
+      else ++fn;
+    } else {
+      if (p) ++fp;
+      else ++tn;
+    }
+  }
 
-  input[0] = 1;
-  input[1] = 1;
-  calc_out = fann_run(ann, input);
-
-  printf("xor test (%f,%f) -> %f\n", input[0], input[1], calc_out[0]);
-
-  input[0] = 0;
-  input[1] = 1;
-  calc_out = fann_run(ann, input);
-
-  printf("xor test (%f,%f) -> %f\n", input[0], input[1], calc_out[0]);
-
-  input[0] = 1;
-  input[1] = 0;
-  calc_out = fann_run(ann, input);
-
-  printf("xor test (%f,%f) -> %f\n", input[0], input[1], calc_out[0]);
-
-  input[0] = 0;
-  input[1] = 0;
-  calc_out = fann_run(ann, input);
-
-  printf("xor test (%f,%f) -> %f\n", input[0], input[1], calc_out[0]);
+  printf("\tap\tan\npp\t%d\t%d\npn\t%d\t%d\n", tp, fp, fn, tn);
 
   fann_destroy(ann);
+  fann_destroy_train(testData);
   return 0;
 }

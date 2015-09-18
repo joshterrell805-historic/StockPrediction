@@ -1,3 +1,5 @@
 *.json
 *.csv
 !*symbols.csv
+*.fann
+*.net
