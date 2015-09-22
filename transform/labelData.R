@@ -176,4 +176,4 @@ labelData = function(name) {
   write.csv(quotes, paste('data/', name, '.labeled.3.csv', sep=''));
 };
 
-labelData('AAPL');
+# labelData('AAPL');

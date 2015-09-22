@@ -12,10 +12,10 @@ var csv = require('csv'),
 Promise.promisify(csv.parse)(fs.readFileSync('data/' + symbol +
     '.labeled.3.csv'))
 .then(function(data) {
-  var testPos = 200,
-      testNeg = 800,
-      trainPos = 5000,
-      trainNeg = 15000;
+  var testPos = 1000,
+      testNeg = 2000,
+      trainPos = Number.POSITIVE_INFINITY,
+      trainNeg = Number.POSITIVE_INFINITY;
     
   data = _.shuffle(data);
 
@@ -61,8 +61,8 @@ Promise.promisify(csv.parse)(fs.readFileSync('data/' + symbol +
   write(dataTestNeg, 'test', 'neg');
   write(dataTrainPos, 'train', 'pos');
   write(dataTrainNeg, 'train', 'neg');
-  write(dataTrainPos.concat(dataTrainNeg), 'train');
-  write(dataTestPos.concat(dataTestNeg), 'test');
+  //write(dataTrainPos.concat(dataTrainNeg), 'train');
+  //write(dataTestPos.concat(dataTestNeg), 'test');
 })
 .done();
 

@@ -3,9 +3,10 @@
 
 int main()
 {
-  struct fann *ann = fann_create_from_file("data/AAPL.net");
+  struct fann *ann = fann_create_from_file(
+      "data/AAPL_ADBE_ATVI_COKE_EBAY_EXPE_NFLX_VA.300.net");
   struct fann_train_data *testData =
-      fann_read_train_from_file("data/AAPL.test.fann");
+      fann_read_train_from_file("data/AAPL.test.pos.fann");
 
 
   int tp = 0, tn = 0, fp = 0, fn = 0;
